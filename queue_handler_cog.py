@@ -40,11 +40,13 @@ class queue_handler(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    # Ping cog command
     @app_commands.command(description="Ping the elite cog.")
     @app_commands.guilds(discord.Object(id=846538497087111169))
     async def ping_elite(self, interaction: discord.Interaction):
         await interaction.response.send_message("Pong!", ephemeral=True)
 
+    # Queue command
     @app_commands.command(description="Join the queue.")
     @app_commands.guilds(discord.Object(id=846538497087111169))
     async def q(self, interaction: discord.Interaction):
@@ -87,6 +89,7 @@ class queue_handler(commands.Cog):
                     "Queuing is not enabled in this channel."
                 )
 
+    # Add command
     @app_commands.command(description="Add a player to the queue.")
     @app_commands.guilds(discord.Object(id=846538497087111169))
     async def add(self, interaction: discord.Interaction, user: discord.User):
@@ -117,6 +120,7 @@ class queue_handler(commands.Cog):
                     "Adding and removing players from the queue is not enabled in this channel."
                 )
 
+    # Queue management and team generation function
     async def add_to_queue(self, interaction, user, queue, channel_id, added):
         tier_channel = self.bot.get_channel(channel_id)
         queue.append(user.id)
@@ -135,6 +139,7 @@ class queue_handler(commands.Cog):
                 f"Team 1: {random_queue[0]}\nTeam 2: {random_queue[1]}"
             )
 
+    # Leave command
     @app_commands.command(description="Leave the queue.")
     @app_commands.guilds(discord.Object(id=846538497087111169))
     async def l(self, interaction: discord.Interaction):
@@ -163,6 +168,7 @@ class queue_handler(commands.Cog):
                 "Queuing is not enabled in this channel."
             )
 
+    # Remove command
     @app_commands.command(description="Remove a player from the queue.")
     @app_commands.guilds(discord.Object(id=846538497087111169))
     async def remove(self, interaction: discord.Interaction, user: discord.User):
@@ -187,6 +193,7 @@ class queue_handler(commands.Cog):
                 "Adding and removing players from the queue is not enabled in this channel."
             )
 
+    # Queue removal function
     async def remove_from_queue(self, interaction, user, queue, channel_id, removed):
         tier_channel = self.bot.get_channel(channel_id)
         try:
@@ -207,6 +214,7 @@ class queue_handler(commands.Cog):
             else:
                 await interaction.response.send_message("You are not in the queue.")
 
+    # Random teams generator
     async def random_teams(self, queue):
         random.shuffle(queue)
         team1 = [queue[0], queue[1], queue[2]]
@@ -214,6 +222,7 @@ class queue_handler(commands.Cog):
 
         return team1, team2
 
+    # Status command
     @app_commands.command(description="Check how many players are in the queue.")
     @app_commands.guilds(discord.Object(id=846538497087111169))
     async def status(self, interaction: discord.Interaction):
