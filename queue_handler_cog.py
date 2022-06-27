@@ -131,21 +131,32 @@ class queue_handler(commands.Cog):
         if len(queue) == 6:
             await tier_channel.send(f"Queue popped: {queue}")
             random_queue = await self.random_teams(queue)
+            print(random_queue)
             await tier_channel.send(f"Teams: {random_queue}")
 
     @app_commands.command(description="Leave the queue.")
     @app_commands.guilds(discord.Object(id=846538497087111169))
     async def l(self, interaction: discord.Interaction):
         if interaction.channel_id == elite_channel_id:
-            await self.remove_from_queue(interaction, interaction.user, elite_queue)
+            await self.remove_from_queue(
+                interaction, interaction.user, elite_queue, elite_channel_id, False
+            )
         elif interaction.channel_id == premier_channel_id:
-            await self.remove_from_queue(interaction, interaction.user, premier_queue)
+            await self.remove_from_queue(
+                interaction, interaction.user, premier_queue, premier_channel_id, False
+            )
         elif interaction.channel_id == championship_channel_id:
             await self.remove_from_queue(
-                interaction, interaction.user, championship_queue
+                interaction,
+                interaction.user,
+                championship_queue,
+                championship_channel_id,
+                False,
             )
         elif interaction.channel_id == casual_channel_id:
-            await self.remove_from_queue(interaction, interaction.user, casual_queue)
+            await self.remove_from_queue(
+                interaction, interaction.user, casual_queue, casual_channel_id, False
+            )
         else:
             await interaction.response.send_message(
                 "Queuing is not enabled in this channel."
@@ -155,32 +166,54 @@ class queue_handler(commands.Cog):
     @app_commands.guilds(discord.Object(id=846538497087111169))
     async def remove(self, interaction: discord.Interaction, user: discord.User):
         if interaction.channel_id == elite_logs_channel_id:
-            await self.remove_from_queue(interaction, user, elite_queue)
+            await self.remove_from_queue(
+                interaction, user, elite_queue, elite_channel_id, True
+            )
         elif interaction.channel_id == premier_logs_channel_id:
-            await self.remove_from_queue(interaction, user, premier_queue)
+            await self.remove_from_queue(
+                interaction, user, premier_queue, premier_channel_id, True
+            )
         elif interaction.channel_id == championship_logs_channel_id:
-            await self.remove_from_queue(interaction, user, championship_queue)
+            await self.remove_from_queue(
+                interaction, user, championship_queue, championship_channel_id, True
+            )
         elif interaction.channel_id == casual_logs_channel_id:
-            await self.remove_from_queue(interaction, user, casual_queue)
+            await self.remove_from_queue(
+                interaction, user, casual_queue, casual_channel_id, True
+            )
         else:
             await interaction.response.send_message(
                 "Adding and removing players from the queue is not enabled in this channel."
             )
 
-    async def remove_from_queue(self, interaction, user, queue):
+    async def remove_from_queue(self, interaction, user, queue, channel_id, removed):
+        tier_channel = self.bot.get_channel(channel_id)
         try:
             queue.remove(user.id)
             all_tier_queue.remove(user.id)
-            await interaction.response.send_message(f"{user.name} has left the queue")
+            if removed:
+                await interaction.response.send_message(
+                    f"{user.name} has been removed from the queue."
+                )
+                await tier_channel.send(f"{user.name} has left the queue.")
+            else:
+                await interaction.response.send_message(
+                    f"{user.name} has left the queue."
+                )
         except ValueError:
-            await interaction.response.send_message("User is not in the queue")
+            if removed:
+                await interaction.response.send_message("User is not in the queue.")
+            else:
+                await interaction.response.send_message("You are not in the queue.")
 
     async def random_teams(self, queue):
         print(queue)
         random.shuffle(queue)
         print(queue)
+        team1 = [queue[0], queue[1], queue[2]]
+        team2 = [queue[3], queue[4], queue[5]]
 
-        return queue
+        return team1, team2
 
 
 async def setup(bot):
