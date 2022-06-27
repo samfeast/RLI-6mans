@@ -129,10 +129,11 @@ class queue_handler(commands.Cog):
                 f"{user.name} has joined the queue."
             )
         if len(queue) == 6:
-            await tier_channel.send(f"Queue popped: {queue}")
             random_queue = await self.random_teams(queue)
             print(random_queue)
-            await tier_channel.send(f"Teams: {random_queue}")
+            await tier_channel.send(
+                f"Team 1: {random_queue[0]}\nTeam 2: {random_queue[1]}"
+            )
 
     @app_commands.command(description="Leave the queue.")
     @app_commands.guilds(discord.Object(id=846538497087111169))
@@ -207,13 +208,27 @@ class queue_handler(commands.Cog):
                 await interaction.response.send_message("You are not in the queue.")
 
     async def random_teams(self, queue):
-        print(queue)
         random.shuffle(queue)
-        print(queue)
         team1 = [queue[0], queue[1], queue[2]]
         team2 = [queue[3], queue[4], queue[5]]
 
         return team1, team2
+
+    @app_commands.command(description="Check how many players are in the queue.")
+    @app_commands.guilds(discord.Object(id=846538497087111169))
+    async def status(self, interaction: discord.Interaction):
+        if interaction.channel_id == elite_channel_id:
+            await interaction.response.send_message(elite_queue)
+        elif interaction.channel_id == premier_channel_id:
+            await interaction.response.send_message(premier_queue)
+        elif interaction.channel_id == championship_channel_id:
+            await interaction.response.send_message(championship_queue)
+        elif interaction.channel_id == casual_channel_id:
+            await interaction.response.send_message(casual_queue)
+        else:
+            await interaction.response.send_message(
+                "There is no queue in this channel."
+            )
 
 
 async def setup(bot):
