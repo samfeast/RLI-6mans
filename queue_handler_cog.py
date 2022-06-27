@@ -85,11 +85,48 @@ class queue_handler(commands.Cog):
             await interaction.response.send_message(f"Queue popped: {queue}")
         else:
             await interaction.response.send_message(f"{user.name} has joined the queue")
-            print(elite_queue)
-            print(premier_queue)
-            print(championship_queue)
-            print(casual_queue)
-            print(all_tier_queue)
+
+    @app_commands.command(description="Leave the queue.")
+    @app_commands.guilds(discord.Object(id=846538497087111169))
+    async def l(self, interaction: discord.Interaction):
+        if interaction.channel_id == elite_channel_id:
+            await self.remove_from_queue(interaction, interaction.user, elite_queue)
+        elif interaction.channel_id == premier_channel_id:
+            await self.remove_from_queue(interaction, interaction.user, premier_queue)
+        elif interaction.channel_id == championship_channel_id:
+            await self.remove_from_queue(
+                interaction, interaction.user, championship_queue
+            )
+        elif interaction.channel_id == casual_channel_id:
+            await self.remove_from_queue(interaction, interaction.user, casual_queue)
+        else:
+            await interaction.response.send_message(
+                "Queuing is not enabled in this channel."
+            )
+
+    @app_commands.command(description="Remove a player from the queue.")
+    @app_commands.guilds(discord.Object(id=846538497087111169))
+    async def remove(self, interaction: discord.Interaction, user: discord.User):
+        if interaction.channel_id == elite_logs_channel_id:
+            await self.remove_from_queue(interaction, user, elite_queue)
+        elif interaction.channel_id == premier_logs_channel_id:
+            await self.remove_from_queue(interaction, user, premier_queue)
+        elif interaction.channel_id == championship_logs_channel_id:
+            await self.remove_from_queue(interaction, user, championship_queue)
+        elif interaction.channel_id == casual_logs_channel_id:
+            await self.remove_from_queue(interaction, user, casual_queue)
+        else:
+            await interaction.response.send_message(
+                "Adding and removing players from the queue is not enabled in this channel."
+            )
+
+    async def remove_from_queue(self, interaction, user, queue):
+        try:
+            queue.remove(user.id)
+            all_tier_queue.remove(user.id)
+            await interaction.response.send_message(f"{user.name} has left the queue")
+        except ValueError:
+            await interaction.response.send_message("User is not in the queue")
 
 
 async def setup(bot):
