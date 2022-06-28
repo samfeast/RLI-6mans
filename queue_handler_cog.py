@@ -1,8 +1,10 @@
+from asyncore import write
 import discord
 from discord.ext import commands
 from discord import app_commands
 import json
 import random
+import time
 
 with open("json/config.json", "r") as read_file:
     config = json.load(read_file)
@@ -53,7 +55,7 @@ class queue_handler(commands.Cog):
 
         if interaction.user.id in all_tier_queue:
             await interaction.response.send_message(
-                "Sorry! You are already in a 6mans queue."
+                "Sorry! You are already in a 6mans queue.", ephemeral=True
             )
         else:
             if interaction.channel_id == elite_channel_id:
@@ -86,7 +88,7 @@ class queue_handler(commands.Cog):
                 )
             else:
                 await interaction.response.send_message(
-                    "Queuing is not enabled in this channel."
+                    "Queuing is not enabled in this channel.", ephemeral=True
                 )
 
     # Add command
@@ -96,7 +98,7 @@ class queue_handler(commands.Cog):
 
         if user.id in all_tier_queue:
             await interaction.response.send_message(
-                "Sorry! The user is already in a 6mans queue."
+                "Sorry! This user is already in a 6mans queue.", ephemeral=True
             )
         else:
             if interaction.channel_id == elite_logs_channel_id:
@@ -117,7 +119,8 @@ class queue_handler(commands.Cog):
                 )
             else:
                 await interaction.response.send_message(
-                    "Adding and removing players from the queue is not enabled in this channel."
+                    "Adding and removing players from the queue is not enabled in this channel.",
+                    ephemeral=True,
                 )
 
     # Queue management and team generation function
@@ -126,18 +129,87 @@ class queue_handler(commands.Cog):
         queue.append(user.id)
         all_tier_queue.append(user.id)
         if added:
-            await interaction.response.send_message(f"{user.name} added to queue.")
-            await tier_channel.send(f"{user.name} has joined the queue.")
-        else:
             await interaction.response.send_message(
-                f"{user.name} has joined the queue."
+                f"{user.mention} has been added to the queue."
             )
+            if len(queue) == 1:
+                embed = discord.Embed(title=f"{len(queue)} player is in the queue!")
+                embed.set_footer(
+                    text="5 more needed!",
+                    icon_url=f"https://cdn.discordapp.com/emojis/607596209254694913.png?v=1",
+                )
+            else:
+                embed = discord.Embed(title=f"{len(queue)} players are in the queue!")
+                embed.set_footer(
+                    text=f"{str(6-len(queue))} more needed!",
+                    icon_url=f"https://cdn.discordapp.com/emojis/607596209254694913.png?v=1",
+                )
+            embed.color = 0xFF8B00
+            embed.description = f"{user.mention} has joined the queue."
+            await tier_channel.send(embed=embed)
+        else:
+
+            if len(queue) == 1:
+                embed = discord.Embed(title=f"{len(queue)} player is in the queue!")
+                embed.set_footer(
+                    text="5 more needed!",
+                    icon_url=f"https://cdn.discordapp.com/emojis/607596209254694913.png?v=1",
+                )
+            else:
+                embed = discord.Embed(title=f"{len(queue)} players are in the queue!")
+                embed.set_footer(
+                    text=f"{str(6-len(queue))} more needed!",
+                    icon_url=f"https://cdn.discordapp.com/emojis/607596209254694913.png?v=1",
+                )
+            embed.color = 0xFF8B00
+            embed.description = f"{user.mention} has joined the queue."
+            await interaction.response.send_message(embed=embed)
+
         if len(queue) == 6:
             random_queue = await self.random_teams(queue)
-            print(random_queue)
             await tier_channel.send(
                 f"Team 1: {random_queue[0]}\nTeam 2: {random_queue[1]}"
             )
+
+            with open("json/active_games.json", "r") as read_file:
+                active_games = json.load(read_file)
+
+            if channel_id == elite_channel_id:
+                tier = "elite"
+            elif channel_id == premier_channel_id:
+                tier = "premier"
+            elif channel_id == championship_channel_id:
+                tier = "championship"
+            if channel_id == casual_channel_id:
+                tier = "casual"
+
+            game_dict = {
+                f"RLI{random.randint(1,1000)}": {
+                    "timestamp": round(time.time()),
+                    "tier": tier,
+                    "team_1": random_queue[0],
+                    "team_2": random_queue[1],
+                }
+            }
+
+            active_games["active_games"].append(game_dict)
+
+            with open("json/active_games.json", "w") as write_file:
+                json.dump(active_games, write_file, indent=2)
+
+            for player in random_queue[0]:
+                queue.remove(player)
+
+            for player in random_queue[1]:
+                queue.remove(player)
+
+            for player in random_queue[0]:
+                all_tier_queue.remove(player)
+
+            for player in random_queue[1]:
+                all_tier_queue.remove(player)
+
+            await tier_channel.send("The queue has been reset")
 
     # Leave command
     @app_commands.command(description="Leave the queue.")
