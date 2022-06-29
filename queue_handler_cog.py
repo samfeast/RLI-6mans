@@ -45,7 +45,7 @@ class queue_handler(commands.Cog):
     # Ping cog command
     @app_commands.command(description="Ping the elite cog.")
     @app_commands.guilds(discord.Object(id=846538497087111169))
-    async def ping_elite(self, interaction: discord.Interaction):
+    async def ping_queue_handler(self, interaction: discord.Interaction):
         await interaction.response.send_message("Pong!", ephemeral=True)
 
     # Queue command
@@ -133,7 +133,7 @@ class queue_handler(commands.Cog):
                 f"{user.mention} has been added to the queue."
             )
             if len(queue) == 1:
-                embed = discord.Embed(title=f"{len(queue)} player is in the queue!")
+                embed = discord.Embed(title="1 player is in the queue!")
                 embed.set_footer(
                     text="5 more needed!",
                     icon_url=f"https://cdn.discordapp.com/emojis/607596209254694913.png?v=1",
@@ -166,10 +166,22 @@ class queue_handler(commands.Cog):
             await interaction.response.send_message(embed=embed)
 
         if len(queue) == 6:
+
+            await tier_channel.send("Here")
+
+            view = team_picker()
+            await tier_channel.send("Pick team mode", view=view)
+            await view.wait()
+            if view.value is None:
+                print("Timed out...")
+            elif view.value == "random":
+                print("Teams will be generated randomly")
+            elif view.value == "captains":
+                print("Teams will be made by captains")
+            elif view.value == "balanced":
+                print("Teams will be balanced")
+
             random_queue = await self.random_teams(queue)
-            await tier_channel.send(
-                f"Team 1: {random_queue[0]}\nTeam 2: {random_queue[1]}"
-            )
 
             with open("json/active_games.json", "r") as read_file:
                 active_games = json.load(read_file)
@@ -197,6 +209,30 @@ class queue_handler(commands.Cog):
             with open("json/active_games.json", "w") as write_file:
                 json.dump(active_games, write_file, indent=2)
 
+            match_creator = random.choice(queue)
+
+            teams_embed = discord.Embed(title=f"The Teams!", color=0x83FF00)
+            teams_embed.add_field(
+                name="**-Team 1-**",
+                value=f"{self.bot.get_user(random_queue[0][0]).mention}, {self.bot.get_user(random_queue[0][1]).mention}, {self.bot.get_user(random_queue[0][2]).mention}",
+                inline=False,
+            )
+            teams_embed.add_field(
+                name="**-Team 2-**",
+                value=f"{self.bot.get_user(random_queue[1][0]).mention}, {self.bot.get_user(random_queue[1][1]).mention}, {self.bot.get_user(random_queue[1][2]).mention}",
+                inline=False,
+            )
+            teams_embed.add_field(
+                name="**Match Creator:**",
+                value=f"{self.bot.get_user(match_creator).mention}",
+                inline=False,
+            )
+            teams_embed.set_footer(
+                text=f"Powered by RLI",
+                icon_url=f"https://cdn.discordapp.com/emojis/607596209254694913.png?v=1",
+            )
+            await tier_channel.send(embed=teams_embed)
+
             for player in random_queue[0]:
                 queue.remove(player)
 
@@ -209,7 +245,12 @@ class queue_handler(commands.Cog):
             for player in random_queue[1]:
                 all_tier_queue.remove(player)
 
-            await tier_channel.send("The queue has been reset")
+            queue_reset = discord.Embed(title=f"Queue has been reset.", color=0xFF8B00)
+            queue_reset.set_footer(
+                text=f"When's the next one?...",
+                icon_url=f"https://cdn.discordapp.com/emojis/607596209254694913.png?v=1",
+            )
+            await tier_channel.send(embed=queue_reset)
 
     # Leave command
     @app_commands.command(description="Leave the queue.")
@@ -273,18 +314,50 @@ class queue_handler(commands.Cog):
             all_tier_queue.remove(user.id)
             if removed:
                 await interaction.response.send_message(
-                    f"{user.name} has been removed from the queue."
+                    f"{user.mention} has been removed from the queue."
                 )
-                await tier_channel.send(f"{user.name} has left the queue.")
+                if len(queue) == 1:
+                    embed = discord.Embed(title="1 player is in the queue!")
+                    embed.set_footer(
+                        text="5 more needed!",
+                        icon_url=f"https://cdn.discordapp.com/emojis/607596209254694913.png?v=1",
+                    )
+                else:
+                    embed = discord.Embed(
+                        title=f"{len(queue)} players are in the queue!"
+                    )
+                    embed.set_footer(
+                        text=f"{str(6-len(queue))} more needed!",
+                        icon_url=f"https://cdn.discordapp.com/emojis/607596209254694913.png?v=1",
+                    )
+                embed.color = 0xFFFFFF
+                embed.description = f"{user.mention} has left the queue."
+                await tier_channel.send(embed=embed)
             else:
-                await interaction.response.send_message(
-                    f"{user.name} has left the queue."
-                )
+                if len(queue) == 1:
+                    embed = discord.Embed(title="1 player is in the queue!")
+                    embed.set_footer(
+                        text="5 more needed!",
+                        icon_url=f"https://cdn.discordapp.com/emojis/607596209254694913.png?v=1",
+                    )
+                else:
+                    embed = discord.Embed(
+                        title=f"{len(queue)} players are in the queue!"
+                    )
+                    embed.set_footer(
+                        text=f"{str(6-len(queue))} more needed!",
+                        icon_url=f"https://cdn.discordapp.com/emojis/607596209254694913.png?v=1",
+                    )
+                embed.color = 0xFFFFFF
+                embed.description = f"{user.mention} has left the queue."
+                await interaction.response.send_message(embed=embed)
         except ValueError:
             if removed:
                 await interaction.response.send_message("User is not in the queue.")
             else:
-                await interaction.response.send_message("You are not in the queue.")
+                await interaction.response.send_message(
+                    "You are not currently in the queue."
+                )
 
     # Random teams generator
     async def random_teams(self, queue):
@@ -310,6 +383,34 @@ class queue_handler(commands.Cog):
             await interaction.response.send_message(
                 "There is no queue in this channel."
             )
+
+
+class team_picker(discord.ui.View):
+    def __init__(self):
+        super().__init__()
+        self.value = None
+
+    @discord.ui.button(label="Random", style=discord.ButtonStyle.blurple)
+    async def random(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+        self.value = "random"
+        self.stop()
+
+    @discord.ui.button(label="Captains", style=discord.ButtonStyle.blurple)
+    async def captains(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ):
+        await interaction.response.defer()
+        self.value = "captains"
+        self.stop()
+
+    @discord.ui.button(label="Balanced", style=discord.ButtonStyle.blurple)
+    async def balanced(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ):
+        await interaction.response.defer()
+        self.value = "balanced"
+        self.stop()
 
 
 async def setup(bot):
