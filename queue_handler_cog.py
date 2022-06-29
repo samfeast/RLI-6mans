@@ -124,24 +124,26 @@ class queue_handler(commands.Cog):
                 )
 
     # Queue management and team generation function
-    async def add_to_queue(self, interaction, user, queue, channel_id, added):
+    async def add_to_queue(self, interaction, user, raw_queue, channel_id, added):
         tier_channel = self.bot.get_channel(channel_id)
-        queue.append(user.id)
+        raw_queue.append(user.id)
         all_tier_queue.append(user.id)
         if added:
             await interaction.response.send_message(
                 f"{user.mention} has been added to the queue."
             )
-            if len(queue) == 1:
+            if len(raw_queue) == 1:
                 embed = discord.Embed(title="1 player is in the queue!")
                 embed.set_footer(
                     text="5 more needed!",
                     icon_url=f"https://cdn.discordapp.com/emojis/607596209254694913.png?v=1",
                 )
             else:
-                embed = discord.Embed(title=f"{len(queue)} players are in the queue!")
+                embed = discord.Embed(
+                    title=f"{len(raw_queue)} players are in the queue!"
+                )
                 embed.set_footer(
-                    text=f"{str(6-len(queue))} more needed!",
+                    text=f"{str(6-len(raw_queue))} more needed!",
                     icon_url=f"https://cdn.discordapp.com/emojis/607596209254694913.png?v=1",
                 )
             embed.color = 0xFF8B00
@@ -149,28 +151,50 @@ class queue_handler(commands.Cog):
             await tier_channel.send(embed=embed)
         else:
 
-            if len(queue) == 1:
-                embed = discord.Embed(title=f"{len(queue)} player is in the queue!")
+            if len(raw_queue) == 1:
+                embed = discord.Embed(title=f"{len(raw_queue)} player is in the queue!")
                 embed.set_footer(
                     text="5 more needed!",
                     icon_url=f"https://cdn.discordapp.com/emojis/607596209254694913.png?v=1",
                 )
             else:
-                embed = discord.Embed(title=f"{len(queue)} players are in the queue!")
+                embed = discord.Embed(
+                    title=f"{len(raw_queue)} players are in the queue!"
+                )
                 embed.set_footer(
-                    text=f"{str(6-len(queue))} more needed!",
+                    text=f"{str(6-len(raw_queue))} more needed!",
                     icon_url=f"https://cdn.discordapp.com/emojis/607596209254694913.png?v=1",
                 )
             embed.color = 0xFF8B00
             embed.description = f"{user.mention} has joined the queue."
             await interaction.response.send_message(embed=embed)
 
-        if len(queue) == 6:
+        if len(raw_queue) == 6:
 
-            await tier_channel.send("Here")
+            queue = list(raw_queue)
+
+            for player in queue:
+                raw_queue.remove(player)
+
+            for player in queue:
+                all_tier_queue.remove(player)
+
+            queue_reset = discord.Embed(title=f"Queue has been reset.", color=0xFF8B00)
+            queue_reset.set_footer(
+                text=f"When's the next one?...",
+                icon_url=f"https://cdn.discordapp.com/emojis/607596209254694913.png?v=1",
+            )
+            await tier_channel.send(embed=queue_reset)
 
             view = team_picker()
-            await tier_channel.send("Pick team mode", view=view)
+
+            embed = discord.Embed(title="Choose game!", color=0xFFFFFF)
+            embed.set_footer(
+                text="Powered by RLI",
+                icon_url=f"https://cdn.discordapp.com/emojis/607596209254694913.png?v=1",
+            )
+
+            await tier_channel.send(embed=embed, view=view)
             await view.wait()
             if view.value is None:
                 print("Timed out...")
@@ -232,25 +256,6 @@ class queue_handler(commands.Cog):
                 icon_url=f"https://cdn.discordapp.com/emojis/607596209254694913.png?v=1",
             )
             await tier_channel.send(embed=teams_embed)
-
-            for player in random_queue[0]:
-                queue.remove(player)
-
-            for player in random_queue[1]:
-                queue.remove(player)
-
-            for player in random_queue[0]:
-                all_tier_queue.remove(player)
-
-            for player in random_queue[1]:
-                all_tier_queue.remove(player)
-
-            queue_reset = discord.Embed(title=f"Queue has been reset.", color=0xFF8B00)
-            queue_reset.set_footer(
-                text=f"When's the next one?...",
-                icon_url=f"https://cdn.discordapp.com/emojis/607596209254694913.png?v=1",
-            )
-            await tier_channel.send(embed=queue_reset)
 
     # Leave command
     @app_commands.command(description="Leave the queue.")
@@ -390,7 +395,7 @@ class team_picker(discord.ui.View):
         super().__init__()
         self.value = None
 
-    @discord.ui.button(label="Random", style=discord.ButtonStyle.blurple)
+    @discord.ui.button(label="Random", style=discord.ButtonStyle.red)
     async def random(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.defer()
         self.value = "random"
@@ -404,7 +409,7 @@ class team_picker(discord.ui.View):
         self.value = "captains"
         self.stop()
 
-    @discord.ui.button(label="Balanced", style=discord.ButtonStyle.blurple)
+    @discord.ui.button(label="Balanced", style=discord.ButtonStyle.green)
     async def balanced(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
