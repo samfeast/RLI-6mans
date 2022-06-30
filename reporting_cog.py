@@ -93,6 +93,11 @@ class reporting(commands.Cog):
                 "You do not have permission to report this result."
             )
 
+        active_games["active_games"].remove(game_dict)
+
+        with open("json/active_games.json", "w") as write_file:
+            json.dump(active_games, write_file, indent=2)
+
     async def log_game(self, dict, winner, loser):
         with open("json/game_log.json", "r") as read_file:
             game_log = json.load(read_file)
