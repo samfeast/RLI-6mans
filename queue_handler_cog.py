@@ -191,6 +191,9 @@ class queue_handler(commands.Cog):
             )
             await tier_channel.send(embed=queue_reset)
 
+            global voters
+            voters = list(queue)
+
             view = team_picker()
 
             embed = discord.Embed(title="Choose game!", color=0xFFFFFF)
@@ -422,21 +425,24 @@ class team_picker(discord.ui.View):
         global captains_vote
         global balanced_vote
         await interaction.response.defer()
-        total += 1
-        random_vote += 1
 
-        print("ran")
-        print(total)
-        if total == 6:
-            if random_vote > captains_vote and random_vote > balanced_vote:
-                self.value = "random"
-                self.stop()
-            if captains_vote > random_vote and captains_vote > balanced_vote:
-                self.value = "captains"
-                self.stop()
-            if balanced_vote > captains_vote and balanced_vote > random_vote:
-                self.value = "balanced"
-                self.stop()
+        if interaction.user.id in voters:
+            voters.remove(interaction.user.id)
+            total += 1
+            random_vote += 1
+
+            print("ran")
+            print(total)
+            if total == 6:
+                if random_vote > captains_vote and random_vote > balanced_vote:
+                    self.value = "random"
+                    self.stop()
+                if captains_vote > random_vote and captains_vote > balanced_vote:
+                    self.value = "captains"
+                    self.stop()
+                if balanced_vote > captains_vote and balanced_vote > random_vote:
+                    self.value = "balanced"
+                    self.stop()
 
     @discord.ui.button(label="Captains", style=discord.ButtonStyle.blurple)
     async def captains(
@@ -447,21 +453,24 @@ class team_picker(discord.ui.View):
         global captains_vote
         global balanced_vote
         await interaction.response.defer()
-        total += 1
-        captains_vote += 1
 
-        print("cap")
-        print(total)
-        if total == 6:
-            if random_vote > captains_vote and random_vote > balanced_vote:
-                self.value = "random"
-                self.stop()
-            if captains_vote > random_vote and captains_vote > balanced_vote:
-                self.value = "captains"
-                self.stop()
-            if balanced_vote > captains_vote and balanced_vote > random_vote:
-                self.value = "balanced"
-                self.stop()
+        if interaction.user.id in voters:
+            voters.remove(interaction.user.id)
+            total += 1
+            captains_vote += 1
+
+            print("cap")
+            print(total)
+            if total == 6:
+                if random_vote > captains_vote and random_vote > balanced_vote:
+                    self.value = "random"
+                    self.stop()
+                if captains_vote > random_vote and captains_vote > balanced_vote:
+                    self.value = "captains"
+                    self.stop()
+                if balanced_vote > captains_vote and balanced_vote > random_vote:
+                    self.value = "balanced"
+                    self.stop()
 
     @discord.ui.button(label="Balanced", style=discord.ButtonStyle.green)
     async def balanced(
@@ -472,21 +481,24 @@ class team_picker(discord.ui.View):
         global captains_vote
         global balanced_vote
         await interaction.response.defer()
-        total += 1
-        balanced_vote += 1
 
-        print("bal")
-        print(total)
-        if total == 6:
-            if random_vote > captains_vote and random_vote > balanced_vote:
-                self.value = "random"
-                self.stop()
-            if captains_vote > random_vote and captains_vote > balanced_vote:
-                self.value = "captains"
-                self.stop()
-            if balanced_vote > captains_vote and balanced_vote > random_vote:
-                self.value = "balanced"
-                self.stop()
+        if interaction.user.id in voters:
+            voters.remove(interaction.user.id)
+            total += 1
+            balanced_vote += 1
+
+            print("bal")
+            print(total)
+            if total == 6:
+                if random_vote > captains_vote and random_vote > balanced_vote:
+                    self.value = "random"
+                    self.stop()
+                if captains_vote > random_vote and captains_vote > balanced_vote:
+                    self.value = "captains"
+                    self.stop()
+                if balanced_vote > captains_vote and balanced_vote > random_vote:
+                    self.value = "balanced"
+                    self.stop()
 
 
 async def setup(bot):
