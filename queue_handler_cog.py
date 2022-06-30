@@ -18,14 +18,14 @@ premier_logs_channel_id = config["tiers"]["premier_logs"]
 championship_logs_channel_id = config["tiers"]["championship_logs"]
 casual_logs_channel_id = config["tiers"]["casual_logs"]
 
-elite_queue = []
-premier_queue = [
+elite_queue = [
     297085754658652172,
     495542213535858693,
     209776204817891328,
     202118945803730944,
     201478097667751936,
 ]
+premier_queue = []
 championship_queue = []
 casual_queue = []
 
@@ -37,18 +37,13 @@ all_tier_queue = [
     201478097667751936,
 ]
 
-total = 0
-random_vote = 0
-captains_vote = 0
-balanced_vote = 0
-
 
 class queue_handler(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
     # Ping cog command
-    @app_commands.command(description="Ping the elite cog.")
+    @app_commands.command(description="Ping the queue handler cog.")
     @app_commands.guilds(discord.Object(id=846538497087111169))
     async def ping_queue_handler(self, interaction: discord.Interaction):
         await interaction.response.send_message("Pong!", ephemeral=True)
@@ -176,6 +171,15 @@ class queue_handler(commands.Cog):
 
         if len(raw_queue) == 6:
 
+            global total
+            global random_vote
+            global captains_vote
+            global balanced_vote
+            total = 5
+            random_vote = 2
+            captains_vote = 2
+            balanced_vote = 1
+
             queue = list(raw_queue)
 
             for player in queue:
@@ -228,12 +232,11 @@ class queue_handler(commands.Cog):
                 tier = "casual"
 
             game_dict = {
-                f"RLI{random.randint(1,1000)}": {
-                    "timestamp": round(time.time()),
-                    "tier": tier,
-                    "team_1": random_queue[0],
-                    "team_2": random_queue[1],
-                }
+                "id": f"RLI{random.randint(1, 1000)}",
+                "timestamp": round(time.time()),
+                "tier": tier,
+                "team_1": random_queue[0],
+                "team_2": random_queue[1],
             }
 
             active_games["active_games"].append(game_dict)
@@ -433,16 +436,21 @@ class team_picker(discord.ui.View):
 
             print("ran")
             print(total)
-            if total == 6:
-                if random_vote > captains_vote and random_vote > balanced_vote:
-                    self.value = "random"
-                    self.stop()
-                if captains_vote > random_vote and captains_vote > balanced_vote:
-                    self.value = "captains"
-                    self.stop()
-                if balanced_vote > captains_vote and balanced_vote > random_vote:
-                    self.value = "balanced"
-                    self.stop()
+
+            if random_vote == 4:
+                self.value = "random"
+                self.stop()
+            else:
+                if total == 6:
+                    if random_vote > captains_vote and random_vote > balanced_vote:
+                        self.value = "random"
+                        self.stop()
+                    elif captains_vote > random_vote and captains_vote > balanced_vote:
+                        self.value = "captains"
+                        self.stop()
+                    elif balanced_vote > captains_vote and balanced_vote > random_vote:
+                        self.value = "balanced"
+                        self.stop()
 
     @discord.ui.button(label="Captains", style=discord.ButtonStyle.blurple)
     async def captains(
@@ -461,16 +469,21 @@ class team_picker(discord.ui.View):
 
             print("cap")
             print(total)
-            if total == 6:
-                if random_vote > captains_vote and random_vote > balanced_vote:
-                    self.value = "random"
-                    self.stop()
-                if captains_vote > random_vote and captains_vote > balanced_vote:
-                    self.value = "captains"
-                    self.stop()
-                if balanced_vote > captains_vote and balanced_vote > random_vote:
-                    self.value = "balanced"
-                    self.stop()
+
+            if captains_vote == 4:
+                self.value = "captains"
+                self.stop()
+            else:
+                if total == 6:
+                    if random_vote > captains_vote and random_vote > balanced_vote:
+                        self.value = "random"
+                        self.stop()
+                    elif captains_vote > random_vote and captains_vote > balanced_vote:
+                        self.value = "captains"
+                        self.stop()
+                    elif balanced_vote > captains_vote and balanced_vote > random_vote:
+                        self.value = "balanced"
+                        self.stop()
 
     @discord.ui.button(label="Balanced", style=discord.ButtonStyle.green)
     async def balanced(
@@ -489,16 +502,24 @@ class team_picker(discord.ui.View):
 
             print("bal")
             print(total)
-            if total == 6:
-                if random_vote > captains_vote and random_vote > balanced_vote:
-                    self.value = "random"
-                    self.stop()
-                if captains_vote > random_vote and captains_vote > balanced_vote:
-                    self.value = "captains"
-                    self.stop()
-                if balanced_vote > captains_vote and balanced_vote > random_vote:
-                    self.value = "balanced"
-                    self.stop()
+
+            if balanced_vote == 4:
+                self.value = "balanced"
+                self.stop()
+            else:
+                if total == 6:
+                    if random_vote > captains_vote and random_vote > balanced_vote:
+                        self.value = "random"
+                        self.stop()
+                    elif captains_vote > random_vote and captains_vote > balanced_vote:
+                        self.value = "captains"
+                        self.stop()
+                    elif balanced_vote > captains_vote and balanced_vote > random_vote:
+                        self.value = "balanced"
+                        self.stop()
+                    elif random_vote == captains_vote == balanced_vote:
+                        self.value = "random"
+                        self.stop()
 
 
 async def setup(bot):
