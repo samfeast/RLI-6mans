@@ -37,6 +37,11 @@ all_tier_queue = [
     201478097667751936,
 ]
 
+total = 0
+random_vote = 0
+captains_vote = 0
+balanced_vote = 0
+
 
 class queue_handler(commands.Cog):
     def __init__(self, bot):
@@ -377,17 +382,32 @@ class queue_handler(commands.Cog):
     @app_commands.guilds(discord.Object(id=846538497087111169))
     async def status(self, interaction: discord.Interaction):
         if interaction.channel_id == elite_channel_id:
-            await interaction.response.send_message(elite_queue)
+            await self.show_status(interaction, elite_queue)
         elif interaction.channel_id == premier_channel_id:
-            await interaction.response.send_message(premier_queue)
+            await self.show_status(interaction, premier_queue)
         elif interaction.channel_id == championship_channel_id:
-            await interaction.response.send_message(championship_queue)
+            await self.show_status(interaction, championship_queue)
         elif interaction.channel_id == casual_channel_id:
-            await interaction.response.send_message(casual_queue)
+            await self.show_status(interaction, casual_queue)
         else:
             await interaction.response.send_message(
-                "There is no queue in this channel."
+                "There is no queue in this channel.", ephemeral=True
             )
+
+    async def show_status(self, interaction, queue):
+
+        player_list = []
+        for player in queue:
+            player_list.append(self.bot.get_user(player).mention)
+
+        embed = discord.Embed(title=f"{len(queue)} players are in the queue")
+        embed.description = " ".join(player for player in player_list)
+        embed.color = 0xFF8B00
+        embed.set_footer(
+            text=f"{str(6-len(queue))} more needed!",
+            icon_url=f"https://cdn.discordapp.com/emojis/607596209254694913.png?v=1",
+        )
+        await interaction.response.send_message(embed=embed)
 
 
 class team_picker(discord.ui.View):
@@ -397,25 +417,76 @@ class team_picker(discord.ui.View):
 
     @discord.ui.button(label="Random", style=discord.ButtonStyle.red)
     async def random(self, interaction: discord.Interaction, button: discord.ui.Button):
+        global total
+        global random_vote
+        global captains_vote
+        global balanced_vote
         await interaction.response.defer()
-        self.value = "random"
-        self.stop()
+        total += 1
+        random_vote += 1
+
+        print("ran")
+        print(total)
+        if total == 6:
+            if random_vote > captains_vote and random_vote > balanced_vote:
+                self.value = "random"
+                self.stop()
+            if captains_vote > random_vote and captains_vote > balanced_vote:
+                self.value = "captains"
+                self.stop()
+            if balanced_vote > captains_vote and balanced_vote > random_vote:
+                self.value = "balanced"
+                self.stop()
 
     @discord.ui.button(label="Captains", style=discord.ButtonStyle.blurple)
     async def captains(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
+        global total
+        global random_vote
+        global captains_vote
+        global balanced_vote
         await interaction.response.defer()
-        self.value = "captains"
-        self.stop()
+        total += 1
+        captains_vote += 1
+
+        print("cap")
+        print(total)
+        if total == 6:
+            if random_vote > captains_vote and random_vote > balanced_vote:
+                self.value = "random"
+                self.stop()
+            if captains_vote > random_vote and captains_vote > balanced_vote:
+                self.value = "captains"
+                self.stop()
+            if balanced_vote > captains_vote and balanced_vote > random_vote:
+                self.value = "balanced"
+                self.stop()
 
     @discord.ui.button(label="Balanced", style=discord.ButtonStyle.green)
     async def balanced(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
+        global total
+        global random_vote
+        global captains_vote
+        global balanced_vote
         await interaction.response.defer()
-        self.value = "balanced"
-        self.stop()
+        total += 1
+        balanced_vote += 1
+
+        print("bal")
+        print(total)
+        if total == 6:
+            if random_vote > captains_vote and random_vote > balanced_vote:
+                self.value = "random"
+                self.stop()
+            if captains_vote > random_vote and captains_vote > balanced_vote:
+                self.value = "captains"
+                self.stop()
+            if balanced_vote > captains_vote and balanced_vote > random_vote:
+                self.value = "balanced"
+                self.stop()
 
 
 async def setup(bot):
