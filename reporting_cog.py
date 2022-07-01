@@ -30,6 +30,7 @@ class reporting(commands.Cog):
 
         if interaction.user.id in game["team_1"]:
             await self.log_game(game_dict, game["team_1"], game["team_2"])
+            await self.log_player_data(game["team_1"], game["team_2"])
 
             winning_players = []
             losing_players = []
@@ -60,6 +61,7 @@ class reporting(commands.Cog):
 
         elif interaction.user.id in game["team_2"]:
             await self.log_game(game_dict, game["team_2"], game["team_1"])
+            await self.log_player_data(game["team_2"], game["team_1"])
 
             winning_players = []
             losing_players = []
@@ -114,6 +116,29 @@ class reporting(commands.Cog):
 
         with open("json/game_log.json", "w") as write_file:
             json.dump(game_log, write_file, indent=2)
+
+    async def log_player_data(self, winner, loser):
+        with open("json/player_data.json", "r") as read_file:
+            player_data = json.load(read_file)
+
+        print("here")
+
+        for player in winner:
+            id = str(player)
+            if id in player_data:
+                player_data[id]["wins"] += 1
+            else:
+                player_data[id] = {"wins": 1, "losses": 0}
+
+        for player in loser:
+            id = str(player)
+            if id in player_data:
+                player_data[id]["losses"] += 1
+            else:
+                player_data[id] = {"losses": 1, "wins": 0}
+
+        with open("json/player_data.json", "w") as write_file:
+            json.dump(player_data, write_file, indent=2)
 
 
 async def setup(bot):
