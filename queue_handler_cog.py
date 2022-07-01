@@ -19,22 +19,22 @@ championship_logs_channel_id = config["tiers"]["championship_logs"]
 casual_logs_channel_id = config["tiers"]["casual_logs"]
 
 elite_queue = [
-    297085754658652172,
     495542213535858693,
-    209776204817891328,
-    202118945803730944,
-    201478097667751936,
+    297085754658652172,
+    142700274849415170,
+    415174814534467584,
+    402523329954840596,
 ]
 premier_queue = []
 championship_queue = []
 casual_queue = []
 
 all_tier_queue = [
-    297085754658652172,
     495542213535858693,
-    209776204817891328,
-    202118945803730944,
-    201478097667751936,
+    297085754658652172,
+    142700274849415170,
+    415174814534467584,
+    402523329954840596,
 ]
 
 
@@ -231,8 +231,10 @@ class queue_handler(commands.Cog):
             if channel_id == casual_channel_id:
                 tier = "casual"
 
+            game_id = random.randint(1, 1000)
+
             game_dict = {
-                "id": f"RLI{random.randint(1, 1000)}",
+                "id": f"RLI{game_id}",
                 "timestamp": round(time.time()),
                 "tier": tier,
                 "team_1": random_queue[0],
@@ -267,6 +269,51 @@ class queue_handler(commands.Cog):
                 icon_url=f"https://cdn.discordapp.com/emojis/607596209254694913.png?v=1",
             )
             await tier_channel.send(embed=teams_embed)
+
+            private_teams_embed = discord.Embed(title=f"The Teams!", color=0x83FF00)
+            private_teams_embed.add_field(
+                name="**-Team 1-**",
+                value=f"{self.bot.get_user(random_queue[0][0]).mention}, {self.bot.get_user(random_queue[0][1]).mention}, {self.bot.get_user(random_queue[0][2]).mention}",
+                inline=False,
+            )
+            private_teams_embed.add_field(
+                name="**-Team 2-**",
+                value=f"{self.bot.get_user(random_queue[1][0]).mention}, {self.bot.get_user(random_queue[1][1]).mention}, {self.bot.get_user(random_queue[1][2]).mention}",
+                inline=False,
+            )
+            private_teams_embed.add_field(
+                name="**Match Creator:**",
+                value=f"{self.bot.get_user(match_creator).mention}",
+                inline=False,
+            )
+
+            password = f"RLI{random.randint(1, 1000)}"
+
+            private_teams_embed.add_field(
+                name="**Username:**", value=game_id, inline=True
+            )
+            private_teams_embed.add_field(
+                name="**Password:**", value=password, inline=True
+            )
+
+            for player in random_queue[0]:
+                try:
+                    player_object = self.bot.get_user(player)
+                    # await player_object.send(embed=private_teams_embed)
+                    await player_object.send(
+                        "Sorry again! Please disregard these messages. You may want to mute me as there will probably be quite a few more to come."
+                    )
+                except:
+                    print(f"Could not dm {player}")
+            for player in random_queue[1]:
+                try:
+                    player_object = self.bot.get_user(player)
+                    # await player_object.send(embed=private_teams_embed)
+                    await player_object.send(
+                        "Sorry again! Please disregard these messages. You may want to mute me as there will probably be quite a few more to come."
+                    )
+                except:
+                    print(f"Could not dm {player}")
 
     # Leave command
     @app_commands.command(description="Leave the queue.")
