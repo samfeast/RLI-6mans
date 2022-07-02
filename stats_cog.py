@@ -87,6 +87,53 @@ class stats(commands.Cog):
 
         await interaction.response.send_message(embed=player_embed)
 
+    @app_commands.command(description="Show the leaderboard.")
+    @app_commands.guilds(discord.Object(id=846538497087111169))
+    async def leaderboard(self, interaction: discord.Interaction, tier: str = None):
+        with open("json/player_data.json", "r") as read_file:
+            player_data = json.load(read_file)
+
+        if tier == None:
+            if str(interaction.user.id) in player_data["elite"]:
+                await self.show_leaderboard(interaction, player_data, "elite")
+            elif str(interaction.user.id) in player_data["premier"]:
+                await self.show_leaderboard(interaction, player_data, "premier")
+            elif str(interaction.user.id) in player_data["championship"]:
+                await self.show_leaderboard(interaction, player_data, "championship")
+            elif str(interaction.user.id) in player_data["casual"]:
+                await self.show_leaderboard(interaction, player_data, "casual")
+            else:
+                await interaction.response.send_message("Tier not found")
+        else:
+            try:
+                await self.show_leaderboard(interaction, player_data, tier.lower())
+            except:
+                await interaction.response.send_message("Unable to display stats.")
+
+    async def show_leaderboard(self, interaction, player_data, tier):
+
+        leaderboard_dict = {}
+        for player in player_data[tier]:
+            leaderboard_dict[player] = player_data[tier][player]["points"]
+
+        print(leaderboard_dict)
+
+        leaderboard_embed = discord.Embed(
+            title=f"{tier.capitalize()} Leaderboard", color=0x83FF00
+        )
+        i = 1
+        for k, v in sorted(
+            leaderboard_dict.items(), key=lambda item: item[1], reverse=True
+        ):
+            leaderboard_embed.add_field(
+                name=f"{i}:",
+                value=f"{self.bot.get_user(int(k)).name}: {v:.2f}",
+                inline=False,
+            )
+            i += 1
+
+        await interaction.response.send_message(embed=leaderboard_embed)
+
 
 async def setup(bot):
     await bot.add_cog(stats(bot))
