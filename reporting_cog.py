@@ -59,6 +59,8 @@ class reporting(commands.Cog):
             )
             await interaction.response.send_message(embed=embed)
 
+            active_games["active_games"].remove(game_dict)
+
         elif interaction.user.id in game["team_2"]:
             await self.log_game(game_dict, game["team_2"], game["team_1"])
             await self.log_player_data(game_dict, game["team_2"], game["team_1"])
@@ -90,12 +92,12 @@ class reporting(commands.Cog):
             )
             await interaction.response.send_message(embed=embed)
 
+            active_games["active_games"].remove(game_dict)
+
         else:
             await interaction.response.send_message(
                 "You do not have permission to report this result."
             )
-
-        active_games["active_games"].remove(game_dict)
 
         with open("json/active_games.json", "w") as write_file:
             json.dump(active_games, write_file, indent=2)
@@ -121,23 +123,53 @@ class reporting(commands.Cog):
         with open("json/player_data.json", "r") as read_file:
             player_data = json.load(read_file)
 
-        print("here")
-
         for player in winner:
             id = str(player)
-            if id in player_data:
+            if id in player_data[dict["tier"]]:
                 player_data[dict["tier"]][id]["wins"] += 1
                 player_data[dict["tier"]][id]["points"] += 1.42
             else:
-                player_data[dict["tier"]][id] = {"wins": 1, "losses": 0, "points": 1.42}
+                player_data[dict["tier"]][id] = {
+                    "wins": 1,
+                    "losses": 0,
+                    "points": 1.42,
+                    "elo": 1000,
+                }
 
         for player in loser:
             id = str(player)
-            if id in player_data:
+            if id in player_data[dict["tier"]]:
                 player_data[dict["tier"]][id]["losses"] += 1
                 player_data[dict["tier"]][id]["points"] -= 1
             else:
-                player_data[dict["tier"]][id] = {"losses": 1, "wins": 0, "points": -1}
+                player_data[dict["tier"]][id] = {
+                    "losses": 1,
+                    "wins": 0,
+                    "points": -1,
+                    "elo": 1000,
+                }
+
+        gain = 20
+
+        for player in winner:
+            current_elo = player_data[dict["tier"]][str(player)]["elo"]
+
+            if winner == dict["team_1"]:
+                new_elo = current_elo + (gain * (1 - dict["p1_win"]))
+            else:
+                new_elo = current_elo + (gain * (1 - dict["p2_win"]))
+            print(f"{player}: {current_elo} -> {new_elo}")
+            player_data[dict["tier"]][str(player)]["elo"] = new_elo
+
+        for player in loser:
+            current_elo = player_data[dict["tier"]][str(player)]["elo"]
+
+            if loser == dict["team_1"]:
+                new_elo = current_elo + (gain * (0 - dict["p1_win"]))
+            else:
+                new_elo = current_elo + (gain * (0 - dict["p2_win"]))
+            print(f"{player}: {current_elo} -> {new_elo}")
+            player_data[dict["tier"]][str(player)]["elo"] = new_elo
 
         with open("json/player_data.json", "w") as write_file:
             json.dump(player_data, write_file, indent=2)

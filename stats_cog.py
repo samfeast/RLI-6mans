@@ -27,8 +27,6 @@ class stats(commands.Cog):
         if user == None:
             user = interaction.user
 
-        print(user.id)
-
         with open("json/player_data.json", "r") as read_file:
             player_data = json.load(read_file)
 
@@ -165,8 +163,6 @@ class stats(commands.Cog):
         leaderboard_dict = {}
         for player in player_data[tier]:
             leaderboard_dict[player] = player_data[tier][player]["points"]
-
-        print(leaderboard_dict)
 
         leaderboard_embed = discord.Embed(
             title=f"{tier.capitalize()} Leaderboard", color=0x83FF00

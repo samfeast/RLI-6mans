@@ -5,7 +5,6 @@ from discord import app_commands
 import json
 import random
 import time
-import asyncio
 
 with open("json/config.json", "r") as read_file:
     config = json.load(read_file)
@@ -19,24 +18,12 @@ premier_logs_channel_id = config["tiers"]["premier_logs"]
 championship_logs_channel_id = config["tiers"]["championship_logs"]
 casual_logs_channel_id = config["tiers"]["casual_logs"]
 
-elite_queue = [
-    495542213535858693,
-    297085754658652172,
-    142700274849415170,
-    415174814534467584,
-    402523329954840596,
-]
+elite_queue = []
 premier_queue = []
 championship_queue = []
 casual_queue = []
 
-all_tier_queue = [
-    495542213535858693,
-    297085754658652172,
-    142700274849415170,
-    415174814534467584,
-    402523329954840596,
-]
+all_tier_queue = []
 
 
 class queue_handler(commands.Cog):
@@ -176,10 +163,10 @@ class queue_handler(commands.Cog):
             global random_vote
             global captains_vote
             global balanced_vote
-            total = 5
-            random_vote = 2
-            captains_vote = 1
-            balanced_vote = 2
+            total = 0
+            random_vote = 0
+            captains_vote = 0
+            balanced_vote = 0
 
             queue = list(raw_queue)
 
@@ -232,12 +219,35 @@ class queue_handler(commands.Cog):
 
             game_id = random.randint(1, 1000)
 
+            with open("json/player_data.json", "r") as read_file:
+                player_data = json.load(read_file)
+
+            team1_elo = 0
+            team2_elo = 0
+
+            for player in set_queue[0]:
+                if str(player) in player_data[tier]:
+                    team1_elo += player_data[tier][str(player)]["elo"]
+                else:
+                    team1_elo += 1000
+
+            for player in set_queue[1]:
+                if str(player) in player_data[tier]:
+                    team2_elo += player_data[tier][str(player)]["elo"]
+                else:
+                    team2_elo += 1000
+
+            p1_win = 1 / (1 + 10 ** ((team2_elo - team1_elo) / 400))
+            p2_win = 1 / (1 + 10 ** ((team1_elo - team2_elo) / 400))
+
             game_dict = {
                 "id": f"RLI{game_id}",
                 "timestamp": round(time.time()),
                 "tier": tier,
                 "team_1": set_queue[0],
                 "team_2": set_queue[1],
+                "p1_win": p1_win,
+                "p2_win": p2_win,
             }
 
             active_games["active_games"].append(game_dict)
@@ -694,14 +704,6 @@ class queue_handler(commands.Cog):
             player_with_elo = perm_queue_with_elo[perm_queue_with_elo.index(player)]
             team_b_elo += player_with_elo[1]
 
-        # The 400 value in this dictates how "sensitive" the probability is. A lower value, e.g 100, would cause a big advantage in probability from a small advantage in ELO, a big value, e.g 1000, would result in a small advantage in probability from a small advantage in ELO.
-        probability_a_win = 1 / (1 + 10 ** ((team_b_elo - team_a_elo) / sensitivity))
-        probability_b_win = 1 / (1 + 10 ** ((team_a_elo - team_b_elo) / sensitivity))
-
-        print(team_a_elo)
-        print(team_a)
-        print(team_b_elo)
-        print(team_b)
         team1 = []
         team2 = []
 
@@ -709,9 +711,6 @@ class queue_handler(commands.Cog):
             team1.append(int(player[0]))
         for player in team_b:
             team2.append(int(player[0]))
-
-        print(team1)
-        print(team2)
 
         return team1, team2
 
@@ -766,8 +765,7 @@ class team_picker(discord.ui.View):
             total += 1
             random_vote += 1
 
-            print("ran")
-            print(total)
+            print(f"{interaction.user.id} voted for random. ({total} votes)")
 
             if random_vote == 4:
                 self.value = "random"
@@ -799,8 +797,7 @@ class team_picker(discord.ui.View):
             total += 1
             captains_vote += 1
 
-            print("cap")
-            print(total)
+            print(f"{interaction.user.id} voted for captains. ({total} votes)")
 
             if captains_vote == 4:
                 self.value = "captains"
@@ -832,8 +829,7 @@ class team_picker(discord.ui.View):
             total += 1
             balanced_vote += 1
 
-            print("bal")
-            print(total)
+            print(f"{interaction.user.id} voted for balanced. ({total} votes)")
 
             if balanced_vote == 4:
                 self.value = "balanced"
