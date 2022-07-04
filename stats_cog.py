@@ -87,8 +87,6 @@ class stats(commands.Cog):
             for player in player_data[tier]:
                 leaderboard_dict[player] = player_data[tier][player]["points"]
 
-            print(leaderboard_dict)
-
             i = 1
 
             for k, v in sorted(

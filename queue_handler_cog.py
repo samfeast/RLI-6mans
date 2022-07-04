@@ -5,6 +5,7 @@ from discord import app_commands
 import json
 import random
 import time
+import asyncio
 
 with open("json/config.json", "r") as read_file:
     config = json.load(read_file)
@@ -209,15 +210,13 @@ class queue_handler(commands.Cog):
             await tier_channel.send(embed=embed, view=view)
             await view.wait()
             if view.value is None:
-                print("Timed out...")
+                set_queue = await self.random_teams(queue)
             elif view.value == "random":
-                print("Teams will be generated randomly")
+                set_queue = await self.random_teams(queue)
             elif view.value == "captains":
-                print("Teams will be made by captains")
+                set_queue = await self.captains_teams(queue, channel_id)
             elif view.value == "balanced":
                 print("Teams will be balanced")
-
-            random_queue = await self.random_teams(queue)
 
             with open("json/active_games.json", "r") as read_file:
                 active_games = json.load(read_file)
@@ -237,8 +236,8 @@ class queue_handler(commands.Cog):
                 "id": f"RLI{game_id}",
                 "timestamp": round(time.time()),
                 "tier": tier,
-                "team_1": random_queue[0],
-                "team_2": random_queue[1],
+                "team_1": set_queue[0],
+                "team_2": set_queue[1],
             }
 
             active_games["active_games"].append(game_dict)
@@ -251,12 +250,12 @@ class queue_handler(commands.Cog):
             teams_embed = discord.Embed(title=f"The Teams!", color=0x83FF00)
             teams_embed.add_field(
                 name="**-Team 1-**",
-                value=f"{self.bot.get_user(random_queue[0][0]).mention}, {self.bot.get_user(random_queue[0][1]).mention}, {self.bot.get_user(random_queue[0][2]).mention}",
+                value=f"{self.bot.get_user(set_queue[0][0]).mention}, {self.bot.get_user(set_queue[0][1]).mention}, {self.bot.get_user(set_queue[0][2]).mention}",
                 inline=False,
             )
             teams_embed.add_field(
                 name="**-Team 2-**",
-                value=f"{self.bot.get_user(random_queue[1][0]).mention}, {self.bot.get_user(random_queue[1][1]).mention}, {self.bot.get_user(random_queue[1][2]).mention}",
+                value=f"{self.bot.get_user(set_queue[1][0]).mention}, {self.bot.get_user(set_queue[1][1]).mention}, {self.bot.get_user(set_queue[1][2]).mention}",
                 inline=False,
             )
             teams_embed.add_field(
@@ -273,12 +272,12 @@ class queue_handler(commands.Cog):
             private_teams_embed = discord.Embed(title=f"The Teams!", color=0x83FF00)
             private_teams_embed.add_field(
                 name="**-Team 1-**",
-                value=f"{self.bot.get_user(random_queue[0][0]).mention}, {self.bot.get_user(random_queue[0][1]).mention}, {self.bot.get_user(random_queue[0][2]).mention}",
+                value=f"{self.bot.get_user(set_queue[0][0]).mention}, {self.bot.get_user(set_queue[0][1]).mention}, {self.bot.get_user(set_queue[0][2]).mention}",
                 inline=False,
             )
             private_teams_embed.add_field(
                 name="**-Team 2-**",
-                value=f"{self.bot.get_user(random_queue[1][0]).mention}, {self.bot.get_user(random_queue[1][1]).mention}, {self.bot.get_user(random_queue[1][2]).mention}",
+                value=f"{self.bot.get_user(set_queue[1][0]).mention}, {self.bot.get_user(set_queue[1][1]).mention}, {self.bot.get_user(set_queue[1][2]).mention}",
                 inline=False,
             )
             private_teams_embed.add_field(
@@ -296,7 +295,7 @@ class queue_handler(commands.Cog):
                 name="**Password:**", value=password, inline=True
             )
 
-            for player in random_queue[0]:
+            for player in set_queue[0]:
                 try:
                     player_object = self.bot.get_user(player)
                     # await player_object.send(embed=private_teams_embed)
@@ -305,7 +304,7 @@ class queue_handler(commands.Cog):
                     )
                 except:
                     print(f"Could not dm {player}")
-            for player in random_queue[1]:
+            for player in set_queue[1]:
                 try:
                     player_object = self.bot.get_user(player)
                     # await player_object.send(embed=private_teams_embed)
@@ -427,6 +426,170 @@ class queue_handler(commands.Cog):
         random.shuffle(queue)
         team1 = [queue[0], queue[1], queue[2]]
         team2 = [queue[3], queue[4], queue[5]]
+
+        return team1, team2
+
+    async def captains_teams(self, queue, channel_id):
+
+        with open("json/player_data.json", "r") as read_file:
+            player_data = json.load(read_file)
+
+        if channel_id == elite_channel_id:
+            tier = "elite"
+        elif channel_id == premier_channel_id:
+            tier = "premier"
+        elif channel_id == championship_channel_id:
+            tier = "championship"
+        elif channel_id == casual_channel_id:
+            tier = "casual"
+
+        tier_channel = self.bot.get_channel(channel_id)
+
+        player_data_dict = {}
+        for player in queue:
+            try:
+                player_data_dict[str(player)] = player_data[tier][str(player)]["points"]
+            except KeyError:
+                player_data_dict[str(player)] = 0
+
+        i = 0
+        ordered_players = []
+        for k, v in sorted(
+            player_data_dict.items(), key=lambda item: item[1], reverse=True
+        ):
+            ordered_players.append(k)
+            i += 1
+
+        captain1 = int(ordered_players[0])
+        captain2 = int(ordered_players[1])
+        ordered_players.remove(str(captain1))
+        ordered_players.remove(str(captain2))
+
+        team1 = [captain1]
+        team2 = [captain2]
+
+        global allowed_to_pick
+        allowed_to_pick = str(captain1)
+
+        view = first_pick()
+
+        embed = discord.Embed(title="Pick your teams!", color=0x0099FF)
+        embed.add_field(
+            name="Team 1", value=self.bot.get_user(captain1).name, inline=True
+        )
+        embed.add_field(
+            name="Team 2", value=self.bot.get_user(captain2).name, inline=True
+        )
+        embed.add_field(
+            name="Player 1",
+            value=self.bot.get_user(int(ordered_players[0])).name,
+            inline=False,
+        )
+        embed.add_field(
+            name="Player 2",
+            value=self.bot.get_user(int(ordered_players[1])).name,
+            inline=False,
+        )
+        embed.add_field(
+            name="Player 3",
+            value=self.bot.get_user(int(ordered_players[2])).name,
+            inline=False,
+        )
+        embed.add_field(
+            name="Player 4",
+            value=self.bot.get_user(int(ordered_players[3])).name,
+            inline=False,
+        )
+        embed.set_footer(
+            text=f"{self.bot.get_user(int(allowed_to_pick)).name}'s turn to choose",
+            icon_url=f"https://cdn.discordapp.com/emojis/607596209254694913.png?v=1",
+        )
+        embed.set_thumbnail(url=self.bot.get_user(int(allowed_to_pick)).avatar.url)
+        first_pick_embed = await tier_channel.send(embed=embed, view=view)
+
+        await view.wait()
+        first_player_pick = ordered_players[view.value]
+        team1.append(int(first_player_pick))
+        ordered_players.remove(first_player_pick)
+        await first_pick_embed.delete()
+
+        allowed_to_pick = str(captain2)
+        view = second_pick()
+
+        embed = discord.Embed(title="Pick your teams!", color=0x0099FF)
+        embed.add_field(
+            name="Team 1",
+            value=f"{self.bot.get_user(captain1).name}, {self.bot.get_user(team1[1]).name}",
+            inline=True,
+        )
+        embed.add_field(
+            name="Team 2", value=f"{self.bot.get_user(captain2).name}", inline=True
+        )
+        embed.add_field(
+            name="Player 1",
+            value=self.bot.get_user(int(ordered_players[0])).name,
+            inline=False,
+        )
+        embed.add_field(
+            name="Player 2",
+            value=self.bot.get_user(int(ordered_players[1])).name,
+            inline=False,
+        )
+        embed.add_field(
+            name="Player 3",
+            value=self.bot.get_user(int(ordered_players[2])).name,
+            inline=False,
+        )
+        embed.set_thumbnail(url=self.bot.get_user(int(allowed_to_pick)).avatar.url)
+        embed.set_footer(
+            text=f"{self.bot.get_user(int(allowed_to_pick)).name}'s turn to choose",
+            icon_url=f"https://cdn.discordapp.com/emojis/607596209254694913.png?v=1",
+        )
+        second_pick_embed = await tier_channel.send(embed=embed, view=view)
+
+        await view.wait()
+        second_player_pick = ordered_players[view.value]
+        team2.append(int(second_player_pick))
+        ordered_players.remove(second_player_pick)
+        await second_pick_embed.delete()
+
+        view = third_pick()
+
+        embed = discord.Embed(title="Pick your teams!", color=0x0099FF)
+        embed.add_field(
+            name="Team 1",
+            value=f"{self.bot.get_user(captain1).name}, {self.bot.get_user(team1[1]).name}",
+            inline=True,
+        )
+        embed.add_field(
+            name="Team 2",
+            value=f"{self.bot.get_user(captain2).name}, {self.bot.get_user(team2[1]).name}",
+            inline=True,
+        )
+        embed.add_field(
+            name="Player 1",
+            value=self.bot.get_user(int(ordered_players[0])).name,
+            inline=False,
+        )
+        embed.add_field(
+            name="Player 2",
+            value=self.bot.get_user(int(ordered_players[1])).name,
+            inline=False,
+        )
+        embed.set_thumbnail(url=self.bot.get_user(int(allowed_to_pick)).avatar.url)
+        embed.set_footer(
+            text=f"{self.bot.get_user(int(allowed_to_pick)).name}'s turn to choose",
+            icon_url=f"https://cdn.discordapp.com/emojis/607596209254694913.png?v=1",
+        )
+        third_pick_embed = await tier_channel.send(embed=embed, view=view)
+
+        await view.wait()
+        third_player_pick = ordered_players[view.value]
+        team2.append(int(third_player_pick))
+        ordered_players.remove(third_player_pick)
+        await third_pick_embed.delete()
+
+        team1.append(int(ordered_players[0]))
 
         return team1, team2
 
@@ -567,6 +730,105 @@ class team_picker(discord.ui.View):
                     elif random_vote == captains_vote == balanced_vote:
                         self.value = "random"
                         self.stop()
+
+
+class first_pick(discord.ui.View):
+    def __init__(self):
+        super().__init__()
+        self.value = None
+
+    @discord.ui.button(label="1", style=discord.ButtonStyle.blurple)
+    async def pick_1(self, interaction: discord.Interaction, button: discord.ui.Button):
+
+        await interaction.response.defer()
+        global allowed_to_pick
+        if str(interaction.user.id) == allowed_to_pick:
+            self.value = 0
+            self.stop()
+
+    @discord.ui.button(label="2", style=discord.ButtonStyle.blurple)
+    async def pick_2(self, interaction: discord.Interaction, button: discord.ui.Button):
+
+        await interaction.response.defer()
+        global allowed_to_pick
+        if str(interaction.user.id) == allowed_to_pick:
+            self.value = 1
+            self.stop()
+
+    @discord.ui.button(label="3", style=discord.ButtonStyle.blurple)
+    async def pick_3(self, interaction: discord.Interaction, button: discord.ui.Button):
+
+        await interaction.response.defer()
+        global allowed_to_pick
+        if str(interaction.user.id) == allowed_to_pick:
+            self.value = 2
+            self.stop()
+
+    @discord.ui.button(label="4", style=discord.ButtonStyle.blurple)
+    async def pick_4(self, interaction: discord.Interaction, button: discord.ui.Button):
+
+        await interaction.response.defer()
+        global allowed_to_pick
+        if str(interaction.user.id) == allowed_to_pick:
+            self.value = 3
+            self.stop()
+
+
+class second_pick(discord.ui.View):
+    def __init__(self):
+        super().__init__()
+        self.value = None
+
+    @discord.ui.button(label="1", style=discord.ButtonStyle.blurple)
+    async def pick_1(self, interaction: discord.Interaction, button: discord.ui.Button):
+
+        await interaction.response.defer()
+        global allowed_to_pick
+        if str(interaction.user.id) == allowed_to_pick:
+            self.value = 0
+            self.stop()
+
+    @discord.ui.button(label="2", style=discord.ButtonStyle.blurple)
+    async def pick_2(self, interaction: discord.Interaction, button: discord.ui.Button):
+
+        await interaction.response.defer()
+        global allowed_to_pick
+        if str(interaction.user.id) == allowed_to_pick:
+            self.value = 1
+            self.stop()
+
+    @discord.ui.button(label="3", style=discord.ButtonStyle.blurple)
+    async def pick_3(self, interaction: discord.Interaction, button: discord.ui.Button):
+
+        await interaction.response.defer()
+        global allowed_to_pick
+        if str(interaction.user.id) == allowed_to_pick:
+            self.value = 2
+            self.stop()
+
+
+class third_pick(discord.ui.View):
+    def __init__(self):
+        super().__init__()
+        self.value = None
+
+    @discord.ui.button(label="1", style=discord.ButtonStyle.blurple)
+    async def pick_1(self, interaction: discord.Interaction, button: discord.ui.Button):
+
+        await interaction.response.defer()
+        global allowed_to_pick
+        if str(interaction.user.id) == allowed_to_pick:
+            self.value = 0
+            self.stop()
+
+    @discord.ui.button(label="2", style=discord.ButtonStyle.blurple)
+    async def pick_2(self, interaction: discord.Interaction, button: discord.ui.Button):
+
+        await interaction.response.defer()
+        global allowed_to_pick
+        if str(interaction.user.id) == allowed_to_pick:
+            self.value = 1
+            self.stop()
 
 
 async def setup(bot):
