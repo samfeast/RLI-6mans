@@ -308,19 +308,13 @@ class queue_handler(commands.Cog):
             for player in set_queue[0]:
                 try:
                     player_object = self.bot.get_user(player)
-                    # await player_object.send(embed=private_teams_embed)
-                    await player_object.send(
-                        "Sorry again! Please disregard these messages. You may want to mute me as there will probably be quite a few more to come."
-                    )
+                    await player_object.send(embed=private_teams_embed)
                 except:
                     print(f"Could not dm {player}")
             for player in set_queue[1]:
                 try:
                     player_object = self.bot.get_user(player)
-                    # await player_object.send(embed=private_teams_embed)
-                    await player_object.send(
-                        "Sorry again! Please disregard these messages. You may want to mute me as there will probably be quite a few more to come."
-                    )
+                    await player_object.send(embed=private_teams_embed)
                 except:
                     print(f"Could not dm {player}")
 
