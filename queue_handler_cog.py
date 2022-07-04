@@ -178,8 +178,8 @@ class queue_handler(commands.Cog):
             global balanced_vote
             total = 5
             random_vote = 2
-            captains_vote = 2
-            balanced_vote = 1
+            captains_vote = 1
+            balanced_vote = 2
 
             queue = list(raw_queue)
 
@@ -216,7 +216,7 @@ class queue_handler(commands.Cog):
             elif view.value == "captains":
                 set_queue = await self.captains_teams(queue, channel_id)
             elif view.value == "balanced":
-                print("Teams will be balanced")
+                set_queue = await self.balanced_teams(queue, channel_id)
 
             with open("json/active_games.json", "r") as read_file:
                 active_games = json.load(read_file)
@@ -590,6 +590,128 @@ class queue_handler(commands.Cog):
         await third_pick_embed.delete()
 
         team1.append(int(ordered_players[0]))
+
+        return team1, team2
+
+    async def balanced_teams(self, queue, channel_id):
+        with open("json/player_data.json", "r") as read_file:
+            player_data = json.load(read_file)
+
+        sensitivity = 400
+
+        queue_with_elo = []
+        if channel_id == elite_channel_id:
+            tier = "elite"
+        elif channel_id == premier_channel_id:
+            tier = "premier"
+        elif channel_id == championship_channel_id:
+            tier = "championship"
+        elif channel_id == casual_channel_id:
+            tier = "casual"
+
+        for player in queue:
+            if str(player) in player_data[tier]:
+                queue_with_elo.append(
+                    [str(player), player_data[tier][str(player)]["elo"]]
+                )
+            else:
+                queue_with_elo.append([str(player), 1000])
+
+        total_elo = 0
+        players = []
+        elos = []
+
+        for player in queue_with_elo:
+            total_elo += player[1]
+            elos.append(player[1])
+            players.append(player[0])
+
+        best_player = queue_with_elo[elos.index(max(elos))]
+
+        perm_queue_with_elo = queue_with_elo[:]
+
+        elos.pop(elos.index(best_player[1]))
+        players.pop(players.index(best_player[0]))
+        queue_with_elo.pop(queue_with_elo.index(best_player))
+
+        two_player_elo_target = total_elo / 2 - best_player[1]
+
+        first_pick = []
+        second_pick = []
+        diff = []
+
+        for i in range(4):
+            temp_elos = elos[:]
+            temp_players = players[:]
+            temp_queue_with_elo = queue_with_elo[:]
+
+            for j in range(i):
+                remove_player = temp_queue_with_elo[temp_elos.index(max(temp_elos))]
+
+                temp_elos.pop(temp_elos.index(remove_player[1]))
+                temp_players.pop(temp_players.index(remove_player[0]))
+                temp_queue_with_elo.pop(temp_queue_with_elo.index(remove_player))
+
+            player_two = temp_queue_with_elo[temp_elos.index(max(temp_elos))]
+
+            temp_elos.pop(temp_elos.index(player_two[1]))
+            temp_players.pop(temp_players.index(player_two[0]))
+            temp_queue_with_elo.pop(temp_queue_with_elo.index(player_two))
+
+            one_player_elo_target = two_player_elo_target - player_two[1]
+
+            ideal_player_elo = min(
+                enumerate(temp_elos), key=lambda x: abs(one_player_elo_target - x[1])
+            )
+
+            absolute_difference = abs(one_player_elo_target - ideal_player_elo[1])
+
+            player_three = temp_queue_with_elo[ideal_player_elo[0]]
+
+            first_pick.append(player_two)
+            second_pick.append(player_three)
+            diff.append(absolute_difference)
+
+        team_a = [
+            best_player,
+            first_pick[diff.index(min(diff))],
+            second_pick[diff.index(min(diff))],
+        ]
+
+        team_b = []
+
+        for player in perm_queue_with_elo:
+            if player not in team_a:
+                team_b.append(player)
+
+        team_a_elo = 0
+        for player in team_a:
+            player_with_elo = perm_queue_with_elo[perm_queue_with_elo.index(player)]
+            team_a_elo += player_with_elo[1]
+
+        team_b_elo = 0
+        for player in team_b:
+            player_with_elo = perm_queue_with_elo[perm_queue_with_elo.index(player)]
+            team_b_elo += player_with_elo[1]
+
+        # The 400 value in this dictates how "sensitive" the probability is. A lower value, e.g 100, would cause a big advantage in probability from a small advantage in ELO, a big value, e.g 1000, would result in a small advantage in probability from a small advantage in ELO.
+        probability_a_win = 1 / (1 + 10 ** ((team_b_elo - team_a_elo) / sensitivity))
+        probability_b_win = 1 / (1 + 10 ** ((team_a_elo - team_b_elo) / sensitivity))
+
+        print(team_a_elo)
+        print(team_a)
+        print(team_b_elo)
+        print(team_b)
+        team1 = []
+        team2 = []
+
+        for player in team_a:
+            team1.append(int(player[0]))
+        for player in team_b:
+            team2.append(int(player[0]))
+
+        print(team1)
+        print(team2)
 
         return team1, team2
 
