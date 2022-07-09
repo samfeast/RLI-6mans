@@ -155,11 +155,19 @@ class queue_handler(commands.Cog):
         else:
 
             if len(raw_queue) == 1:
-                embed = discord.Embed(title=f"{len(raw_queue)} player is in the queue!")
+                embed = discord.Embed(title=f"6 players are in the queue!")
                 embed.set_footer(
                     text="5 more needed!",
                     icon_url=f"https://cdn.discordapp.com/emojis/607596209254694913.png?v=1",
                 )
+                embed.color = 0xFF8B00
+            elif len(raw_queue) == 6:
+                embed = discord.Embed(title=f"{len(raw_queue)} player is in the queue!")
+                embed.set_footer(
+                    text="LETS GOOOO!",
+                    icon_url=f"https://cdn.discordapp.com/emojis/607596209254694913.png?v=1",
+                )
+                embed.color = 0x83FF00
             else:
                 embed = discord.Embed(
                     title=f"{len(raw_queue)} players are in the queue!"
@@ -168,7 +176,7 @@ class queue_handler(commands.Cog):
                     text=f"{str(6-len(raw_queue))} more needed!",
                     icon_url=f"https://cdn.discordapp.com/emojis/607596209254694913.png?v=1",
                 )
-            embed.color = 0xFF8B00
+                embed.color = 0xFF8B00
             embed.description = f"{user.mention} has joined the queue."
             await interaction.response.send_message(embed=embed)
 
@@ -330,13 +338,19 @@ class queue_handler(commands.Cog):
             for player in set_queue[0]:
                 try:
                     player_object = self.bot.get_user(player)
-                    await player_object.send(embed=private_teams_embed)
+                    await player_object.send(
+                        "**You have 10 minutes to join the lobby.**",
+                        embed=private_teams_embed,
+                    )
                 except:
                     print(f"Could not dm {player}")
             for player in set_queue[1]:
                 try:
                     player_object = self.bot.get_user(player)
-                    await player_object.send(embed=private_teams_embed)
+                    await player_object.send(
+                        "**You have 10 minutes to join the lobby.**",
+                        embed=private_teams_embed,
+                    )
                 except:
                     print(f"Could not dm {player}")
 
