@@ -21,24 +21,12 @@ premier_logs_channel_id = config["tiers"]["premier_logs"]
 championship_logs_channel_id = config["tiers"]["championship_logs"]
 casual_logs_channel_id = config["tiers"]["casual_logs"]
 
-elite_queue = [
-    202118945803730944,
-    201478097667751936,
-    209776204817891328,
-    297085754658652172,
-    495542213535858693,
-]
+elite_queue = []
 premier_queue = []
 championship_queue = []
 casual_queue = []
 
-all_tier_queue = [
-    202118945803730944,
-    201478097667751936,
-    209776204817891328,
-    297085754658652172,
-    495542213535858693,
-]
+all_tier_queue = []
 
 
 class queue_handler(commands.Cog):
@@ -186,8 +174,8 @@ class queue_handler(commands.Cog):
             global random_vote
             global captains_vote
             global balanced_vote
-            total = 3
-            random_vote = 3
+            total = 0
+            random_vote = 0
             captains_vote = 0
             balanced_vote = 0
 
