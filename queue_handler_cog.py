@@ -5,6 +5,9 @@ from discord import app_commands
 import json
 import random
 import time
+import config
+
+GUILD_ID = config.GUILD_ID
 
 with open("json/config.json", "r") as read_file:
     config = json.load(read_file)
@@ -18,12 +21,24 @@ premier_logs_channel_id = config["tiers"]["premier_logs"]
 championship_logs_channel_id = config["tiers"]["championship_logs"]
 casual_logs_channel_id = config["tiers"]["casual_logs"]
 
-elite_queue = []
+elite_queue = [
+    202118945803730944,
+    201478097667751936,
+    209776204817891328,
+    297085754658652172,
+    495542213535858693,
+]
 premier_queue = []
 championship_queue = []
 casual_queue = []
 
-all_tier_queue = []
+all_tier_queue = [
+    202118945803730944,
+    201478097667751936,
+    209776204817891328,
+    297085754658652172,
+    495542213535858693,
+]
 
 
 class queue_handler(commands.Cog):
@@ -32,13 +47,13 @@ class queue_handler(commands.Cog):
 
     # Ping cog command
     @app_commands.command(description="Ping the queue handler cog.")
-    @app_commands.guilds(discord.Object(id=846538497087111169))
+    @app_commands.guilds(discord.Object(id=GUILD_ID))
     async def ping_queue_handler(self, interaction: discord.Interaction):
         await interaction.response.send_message("Pong!", ephemeral=True)
 
     # Queue command
     @app_commands.command(description="Join the queue.")
-    @app_commands.guilds(discord.Object(id=846538497087111169))
+    @app_commands.guilds(discord.Object(id=GUILD_ID))
     async def q(self, interaction: discord.Interaction):
 
         if interaction.user.id in all_tier_queue:
@@ -81,7 +96,7 @@ class queue_handler(commands.Cog):
 
     # Add command
     @app_commands.command(description="Add a player to the queue.")
-    @app_commands.guilds(discord.Object(id=846538497087111169))
+    @app_commands.guilds(discord.Object(id=GUILD_ID))
     async def add(self, interaction: discord.Interaction, user: discord.User):
 
         if user.id in all_tier_queue:
@@ -163,8 +178,8 @@ class queue_handler(commands.Cog):
             global random_vote
             global captains_vote
             global balanced_vote
-            total = 0
-            random_vote = 0
+            total = 3
+            random_vote = 3
             captains_vote = 0
             balanced_vote = 0
 
@@ -257,20 +272,27 @@ class queue_handler(commands.Cog):
 
             match_creator = random.choice(queue)
 
+            mention_players = []
+
+            for player in queue:
+                mention_players.append(self.bot.get_user(player).mention)
+
+            await tier_channel.send(" ".join(mention_players))
+
             teams_embed = discord.Embed(title=f"The Teams!", color=0x83FF00)
             teams_embed.add_field(
                 name="**-Team 1-**",
-                value=f"{self.bot.get_user(set_queue[0][0]).mention}, {self.bot.get_user(set_queue[0][1]).mention}, {self.bot.get_user(set_queue[0][2]).mention}",
+                value=f"{self.bot.get_user(set_queue[0][0]).name}, {self.bot.get_user(set_queue[0][1]).name}, {self.bot.get_user(set_queue[0][2]).name}",
                 inline=False,
             )
             teams_embed.add_field(
                 name="**-Team 2-**",
-                value=f"{self.bot.get_user(set_queue[1][0]).mention}, {self.bot.get_user(set_queue[1][1]).mention}, {self.bot.get_user(set_queue[1][2]).mention}",
+                value=f"{self.bot.get_user(set_queue[1][0]).name}, {self.bot.get_user(set_queue[1][1]).name}, {self.bot.get_user(set_queue[1][2]).name}",
                 inline=False,
             )
             teams_embed.add_field(
                 name="**Match Creator:**",
-                value=f"{self.bot.get_user(match_creator).mention}",
+                value=f"{self.bot.get_user(match_creator).name}",
                 inline=False,
             )
             teams_embed.set_footer(
@@ -282,24 +304,24 @@ class queue_handler(commands.Cog):
             private_teams_embed = discord.Embed(title=f"The Teams!", color=0x83FF00)
             private_teams_embed.add_field(
                 name="**-Team 1-**",
-                value=f"{self.bot.get_user(set_queue[0][0]).mention}, {self.bot.get_user(set_queue[0][1]).mention}, {self.bot.get_user(set_queue[0][2]).mention}",
+                value=f"{self.bot.get_user(set_queue[0][0]).name}, {self.bot.get_user(set_queue[0][1]).name}, {self.bot.get_user(set_queue[0][2]).name}",
                 inline=False,
             )
             private_teams_embed.add_field(
                 name="**-Team 2-**",
-                value=f"{self.bot.get_user(set_queue[1][0]).mention}, {self.bot.get_user(set_queue[1][1]).mention}, {self.bot.get_user(set_queue[1][2]).mention}",
+                value=f"{self.bot.get_user(set_queue[1][0]).name}, {self.bot.get_user(set_queue[1][1]).name}, {self.bot.get_user(set_queue[1][2]).name}",
                 inline=False,
             )
             private_teams_embed.add_field(
                 name="**Match Creator:**",
-                value=f"{self.bot.get_user(match_creator).mention}",
+                value=f"{self.bot.get_user(match_creator).name}",
                 inline=False,
             )
 
             password = f"RLI{random.randint(1, 1000)}"
 
             private_teams_embed.add_field(
-                name="**Username:**", value=game_id, inline=True
+                name="**Username:**", value=f"RLI{game_id}", inline=True
             )
             private_teams_embed.add_field(
                 name="**Password:**", value=password, inline=True
@@ -320,7 +342,7 @@ class queue_handler(commands.Cog):
 
     # Leave command
     @app_commands.command(description="Leave the queue.")
-    @app_commands.guilds(discord.Object(id=846538497087111169))
+    @app_commands.guilds(discord.Object(id=GUILD_ID))
     async def l(self, interaction: discord.Interaction):
         if interaction.channel_id == elite_channel_id:
             await self.remove_from_queue(
@@ -349,7 +371,7 @@ class queue_handler(commands.Cog):
 
     # Remove command
     @app_commands.command(description="Remove a player from the queue.")
-    @app_commands.guilds(discord.Object(id=846538497087111169))
+    @app_commands.guilds(discord.Object(id=GUILD_ID))
     async def remove(self, interaction: discord.Interaction, user: discord.User):
         if interaction.channel_id == elite_logs_channel_id:
             await self.remove_from_queue(
@@ -710,7 +732,7 @@ class queue_handler(commands.Cog):
 
     # Status command
     @app_commands.command(description="Check how many players are in the queue.")
-    @app_commands.guilds(discord.Object(id=846538497087111169))
+    @app_commands.guilds(discord.Object(id=GUILD_ID))
     async def status(self, interaction: discord.Interaction):
         if interaction.channel_id == elite_channel_id:
             await self.show_status(interaction, elite_queue)
@@ -752,9 +774,11 @@ class team_picker(discord.ui.View):
         global random_vote
         global captains_vote
         global balanced_vote
-        await interaction.response.defer()
 
         if interaction.user.id in voters:
+            await interaction.response.send_message(
+                "Vote received for random teams", ephemeral=True
+            )
             voters.remove(interaction.user.id)
             total += 1
             random_vote += 1
@@ -775,6 +799,12 @@ class team_picker(discord.ui.View):
                     elif balanced_vote > captains_vote and balanced_vote > random_vote:
                         self.value = "balanced"
                         self.stop()
+                    elif random_vote == 3 and balanced_vote == 3:
+                        self.value = "balanced"
+                        self.stop()
+                    else:
+                        self.value = "captains"
+                        self.stop()
 
     @discord.ui.button(label="Captains", style=discord.ButtonStyle.blurple)
     async def captains(
@@ -784,16 +814,18 @@ class team_picker(discord.ui.View):
         global random_vote
         global captains_vote
         global balanced_vote
-        await interaction.response.defer()
 
         if interaction.user.id in voters:
+            await interaction.response.send_message(
+                "Vote received for captains teams", ephemeral=True
+            )
             voters.remove(interaction.user.id)
             total += 1
             captains_vote += 1
 
             print(f"{interaction.user.id} voted for captains. ({total} votes)")
 
-            if captains_vote == 4:
+            if captains_vote == 3:
                 self.value = "captains"
                 self.stop()
             else:
@@ -807,6 +839,12 @@ class team_picker(discord.ui.View):
                     elif balanced_vote > captains_vote and balanced_vote > random_vote:
                         self.value = "balanced"
                         self.stop()
+                    elif random_vote == 3 and balanced_vote == 3:
+                        self.value = "balanced"
+                        self.stop()
+                    else:
+                        self.value = "captains"
+                        self.stop()
 
     @discord.ui.button(label="Balanced", style=discord.ButtonStyle.green)
     async def balanced(
@@ -816,9 +854,11 @@ class team_picker(discord.ui.View):
         global random_vote
         global captains_vote
         global balanced_vote
-        await interaction.response.defer()
 
         if interaction.user.id in voters:
+            await interaction.response.send_message(
+                "Vote received for balanced teams", ephemeral=True
+            )
             voters.remove(interaction.user.id)
             total += 1
             balanced_vote += 1
@@ -839,8 +879,11 @@ class team_picker(discord.ui.View):
                     elif balanced_vote > captains_vote and balanced_vote > random_vote:
                         self.value = "balanced"
                         self.stop()
-                    elif random_vote == captains_vote == balanced_vote:
-                        self.value = "random"
+                    elif random_vote == 3 and balanced_vote == 3:
+                        self.value = "balanced"
+                        self.stop()
+                    else:
+                        self.value = "captains"
                         self.stop()
 
 

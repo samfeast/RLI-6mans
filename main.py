@@ -4,11 +4,12 @@ import asyncio
 from os import listdir
 import config
 
+
 PREFIX = ">"
 # Imports bot token from config.py (so it's hidden on GitHub)
 TOKEN = config.TOKEN
 # Guild ID of server for slash commands to be registered in
-GUILD_ID = 846538497087111169
+GUILD_ID = config.GUILD_ID
 
 intents = discord.Intents.default()
 intents.members = True

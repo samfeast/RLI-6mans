@@ -3,6 +3,9 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 import json
+import config
+
+GUILD_ID = config.GUILD_ID
 
 
 class stats(commands.Cog):
@@ -11,12 +14,12 @@ class stats(commands.Cog):
 
     # Ping cog command
     @app_commands.command(description="Ping the stats cog.")
-    @app_commands.guilds(discord.Object(id=846538497087111169))
+    @app_commands.guilds(discord.Object(id=GUILD_ID))
     async def ping_stats(self, interaction: discord.Interaction):
         await interaction.response.send_message("Pong!", ephemeral=True)
 
     @app_commands.command(description="Show a players stats.")
-    @app_commands.guilds(discord.Object(id=846538497087111169))
+    @app_commands.guilds(discord.Object(id=GUILD_ID))
     async def stats(
         self,
         interaction: discord.Interaction,
@@ -103,7 +106,7 @@ class stats(commands.Cog):
         await interaction.response.send_message(embed=player_embed)
 
     @app_commands.command(description="Show the leaderboard.")
-    @app_commands.guilds(discord.Object(id=846538497087111169))
+    @app_commands.guilds(discord.Object(id=GUILD_ID))
     async def leaderboard(self, interaction: discord.Interaction, tier: str = None):
         with open("json/player_data.json", "r") as read_file:
             player_data = json.load(read_file)
@@ -130,7 +133,7 @@ class stats(commands.Cog):
                 await interaction.response.send_message("Unable to display stats.")
 
     @app_commands.command(description="Show the reverse leaderboard.")
-    @app_commands.guilds(discord.Object(id=846538497087111169))
+    @app_commands.guilds(discord.Object(id=GUILD_ID))
     async def reverse_leaderboard(
         self, interaction: discord.Interaction, tier: str = None
     ):

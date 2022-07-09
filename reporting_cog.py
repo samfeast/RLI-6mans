@@ -3,6 +3,9 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 import json
+import config
+
+GUILD_ID = config.GUILD_ID
 
 
 class reporting(commands.Cog):
@@ -11,12 +14,12 @@ class reporting(commands.Cog):
 
     # Ping cog command
     @app_commands.command(description="Ping the reporting cog.")
-    @app_commands.guilds(discord.Object(id=846538497087111169))
+    @app_commands.guilds(discord.Object(id=GUILD_ID))
     async def ping_reporting(self, interaction: discord.Interaction):
         await interaction.response.send_message("Pong!", ephemeral=True)
 
     @app_commands.command(description="Report a win.")
-    @app_commands.guilds(discord.Object(id=846538497087111169))
+    @app_commands.guilds(discord.Object(id=GUILD_ID))
     async def win(self, interaction: discord.Interaction, id: str):
         with open("json/active_games.json", "r") as read_file:
             active_games = json.load(read_file)
